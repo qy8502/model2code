@@ -1,0 +1,169 @@
+<div class="modal-header">
+  <div class="modal-title"> {{ adding ? '添加模型': '编辑模型' }}</div>
+</div>
+<nz-spin *ngIf="!i" class="modal-spin"></nz-spin>
+
+<form nz-form [formGroup]="modelForm" se-container [firstVisual]="true" [labelWidth]="100" [col]="4">
+  <se required="true" label="名称" [error]="{required:'必须输入模型名称!',pattern:'名称必须是大驼峰命名，以英文开头的英文和数字组合！',repeated:'模型名称不能和其他模型重名！'}">
+    <input [(ngModel)]="i.name" formControlName="name" nz-input placeholder="名称">
+  </se>
+  <se required="true" label="描述" error="请输入模型描述!">
+    <input [(ngModel)]="i.comment" formControlName="comment" nz-input placeholder="描述">
+  </se>
+  <se label="表名" [error]="{pattern:'表名必须是小驼峰或者下划线命名，以英文开头的英文、数字和下划线组合！'}">
+    <input [(ngModel)]="i.table" formControlName="table" nz-input placeholder="表名">
+  </se>
+  <se label="模块" [error]="{pattern:'模块名必须是大驼峰命名，以英文开头的英文和数字组合！'}">
+    <input [(ngModel)]="i.module" formControlName="module" [nzAutocomplete]="moduleName" nz-input
+           placeholder="模块名称，默认与模型名称一致!">
+    <nz-autocomplete #moduleName>
+      <nz-auto-option *ngFor="let data of moduleNameList" [nzValue]="data.value">
+        <p><span>{{data.value}}</span></p>
+        <p class="text-wrap">
+          <small class="text-grey">{{data.label}}</small>
+        </p>
+      </nz-auto-option>
+    </nz-autocomplete>
+  </se>
+</form>
+<div (paste)="pasteField($event.clipboardData.getData('text/plain'))" placeholder="粘贴模型(按Ctrl+V)">
+  <nz-divider nzText="模型字段"></nz-divider>
+  <div *ngIf="fieldFormList && fieldFormList.length" dnd-sortable-container [sortableData]="fieldFormList">
+    <div *ngFor="let item of fieldFormList; let idx = index" dnd-sortable [sortableIndex]="idx"
+         class="field" [ngClass]="{active:item.active}"
+         (mouseenter)="selectedFieldIndex=idx;item.active=true;" (mouseleave)="selectedFieldIndex=-1;item.active=false">
+      <form nz-form [formGroup]="item.form" se-container [firstVisual]="true" [labelWidth]="100" [col]="4">
+        <se required="true" label="名称" [error]="{required:'必须输入字段名称!',pattern:'名称必须是大驼峰命名，以英文开头的英文和数字组合！',repeated:'字段名称不能和其他字段重名！'}">
+          <input [(ngModel)]="item.field.name" formControlName="name" nz-input placeholder="名称">
+        </se>
+        <se required="true" label="描述" error="请输入字段描述!">
+          <input [(ngModel)]="item.field.comment" formControlName="comment" nz-input placeholder="描述">
+        </se>
+        <se required="true" label="类型" error="请选择字段类型!">
+          <nz-select nzShowSearch nzDropdownClassName="model-type" nzPlaceHolder="请选择模型类型"
+                     [(ngModel)]="item.field.type" formControlName="type"
+                     (ngModelChange)="fieldTypeChange($event,item)">
+            <nz-option *ngFor="let type of FieldTypeList" nzCustomContent [nzLabel]="type.label"
+                       [nzValue]="type.value">
+              <p><code class="float-right">{{type.value}}</code>
+                <span>{{type.label}}</span></p>
+              <p class="text-wrap">
+                <small class="text-grey">{{type.desc}}</small>
+              </p>
+            </nz-option>
+          </nz-select>
+        </se>
+        <ng-container *ngIf="item.field.type && FieldTypeMap[item.field.type].typeData" [ngSwitch]="item.field.type">
+          <se *ngSwitchCase="FieldTypeEnum.FOREIGN_KEY.value" required="true" label="关系模型主键列"
+              [error]="{'required':'请选择关系模型主键列','modelError':'请选择正确的关系模型主键列'}">
+            <nz-select nzShowSearch nzDropdownClassName="model-type"
+                       nzPlaceHolder="请选择关系模型主键列" (ngModelChange)="fieldTypeDataChange($event,item.field)"
+                       [(ngModel)]="item.field.typeData" formControlName="typeData">
+              <nz-option *ngFor="let data of foreignKeyTypeDataList" nzCustomContent [nzLabel]="data.value"
+                         [nzValue]="data.value">
+                <p><span>{{data.value}}</span></p>
+                <p class="text-wrap">
+                  <small class="text-grey">{{data.label}}</small>
+                </p>
+              </nz-option>
+            </nz-select>
+          </se>
+          <se *ngSwitchCase="FieldTypeEnum.FOREIGN_FIELD.value" required="true" label="关系模型相关列"
+              [error]="{'required':'请选择关系模型相关列','modelError':'请选择正确的关系模型相关列'}">
+            <nz-select nzShowSearch nzDropdownClassName="model-type" nzPlaceHolder="请选择关系模型相关列"
+                       [(ngModel)]="item.field.typeData" formControlName="typeData">
+              <nz-option *ngFor="let data of foreignFieldTypeDataList" nzCustomContent [nzLabel]="data.value"
+                         [nzValue]="data.value">
+                <p><span>{{data.value}}</span></p>
+                <p class="text-wrap">
+                  <small class="text-grey">{{data.label}}</small>
+                </p>
+              </nz-option>
+            </nz-select>
+          </se>
+          <se *ngSwitchCase="FieldTypeEnum.ENUM.value" required="true" label="整数枚举"
+              [error]="{'required':'请选择整数枚举','modelError':'请选择存在的整数枚举'}">
+            <nz-select nzShowSearch nzDropdownClassName="model-type"
+                       nzPlaceHolder="请选择整数枚举"
+                       [(ngModel)]="item.field.typeData" formControlName="typeData">
+              <nz-option *ngFor="let data of enumTypeDataList" nzCustomContent [nzLabel]="data.value"
+                         [nzValue]="data.value">
+                <p><span>{{data.value}}</span></p>
+                <p class="text-wrap">
+                  <small class="text-grey">{{data.label}}</small>
+                </p>
+              </nz-option>
+            </nz-select>
+          </se>
+          <se *ngSwitchCase="FieldTypeEnum.ENUM_TEXT.value" required="true" label="文本枚举"
+              [error]="{'required':'请选择文本枚举','modelError':'请选择存在的文本枚举'}">
+            <nz-select nzShowSearch nzDropdownClassName="model-type"
+                       nzPlaceHolder="请选择文本枚举"
+                       [(ngModel)]="item.field.typeData" formControlName="typeData">
+              <nz-option *ngFor="let data of enumTextTypeDataList" nzCustomContent [nzLabel]="data.value"
+                         [nzValue]="data.value">
+                <p><span>{{data.value}}</span></p>
+                <p class="text-wrap">
+                  <small class="text-grey">{{data.label}}</small>
+                </p>
+              </nz-option>
+            </nz-select>
+          </se>
+          <se *ngSwitchDefault required="true" label="类型数据"
+              [error]="{'required':'请设置类型数据'}">
+            <input [(ngModel)]="item.field.typeData" formControlName="typeData" nz-input
+                   placeholder="类型数据">
+          </se>
+        </ng-container>
+        <se label="数据库类型" *ngIf="FieldTypeValueForeignList.indexOf(item.field.type)<0">
+          <input [(ngModel)]="item.field.dbType" formControlName="dbType" nz-input placeholder="数据库类型">
+        </se>
+        <se label="数据库默认值" *ngIf="FieldTypeValueForeignList.indexOf(item.field.type)<0">
+          <input [(ngModel)]="item.field.dbDefault" formControlName="dbDefault" nz-input placeholder="数据库类型">
+        </se>
+        <div class="float-right">
+          <se label="主键" [labelWidth]="50" class="width-sm"
+              *ngIf="FieldTypeValueForeignList.indexOf(item.field.type)<0">
+            <nz-switch [(ngModel)]="item.field.pk" [ngModelOptions]="{standalone: true}"></nz-switch>
+          </se>
+          <se label="非空" [labelWidth]="50" class="width-sm"
+              *ngIf="!item.field.pk && FieldTypeValueForeignList.indexOf(item.field.type)<0">
+            <nz-switch [(ngModel)]="item.field.nn" [ngModelOptions]="{standalone: true}"></nz-switch>
+          </se>
+          <se label="非空" [labelWidth]="50" class="width-sm"
+              *ngIf="item.field.pk && FieldTypeValueForeignList.indexOf(item.field.type)<0">
+            <nz-switch [ngModel]="true" disabled [ngModelOptions]="{standalone: true}"></nz-switch>
+          </se>
+          <se label="必填" [labelWidth]="50" class="width-sm"
+              *ngIf="FieldTypeValueForeignList.indexOf(item.field.type)<0">
+            <nz-switch [(ngModel)]="item.field.required" [ngModelOptions]="{standalone: true}"></nz-switch>
+          </se>
+          <se label="搜索" [labelWidth]="50" class="width-sm">
+            <nz-switch [(ngModel)]="item.field.search" [ngModelOptions]="{standalone: true}"></nz-switch>
+          </se>
+        </div>
+      </form>
+      <!--<nz-divider nzDashed nzOrientation="right" [nzText]="item.active? fieldAction :null"></nz-divider>-->
+      <nz-divider nzDashed [nzText]="fieldAction "></nz-divider>
+      <ng-template #fieldAction>
+        <a (click)="addField(idx)" class="text-sm"><i nz-icon nzType="plus"></i> 插入字段</a>
+        <nz-divider nzType="vertical"></nz-divider>
+        <a dnd-sortable-handle class="text-sm"><i nz-icon nzType="drag" nzTheme="outline"></i> 排序</a>
+        <nz-divider nzType="vertical"></nz-divider>
+        <a (click)="copyField(item.field)" (dblclick)="copyField(item.field,true)" class="text-sm">
+          <i nz-icon nzType="copy" nzTheme="outline"></i> 复制</a>
+        <nz-divider nzType="vertical"></nz-divider>
+        <a (click)="deleteField(item)" class="text-sm"><i nz-icon nzType="delete" nzTheme="outline"></i> 删除</a>
+      </ng-template>
+    </div>
+  </div>
+</div>
+<button style="height:48px;" (click)="addField()" nz-button [nzBlock]="true" nzType="dashed" nzSize="large">
+  <i nz-icon nzType="plus" nzTheme="outline"></i>添加字段
+</button>
+<div class="modal-footer">
+  <button nz-button type="button" (click)="close()">关闭</button>
+  <button nz-button type="submit" nzType="primary" maxlength="0" (click)="save()" [disabled]="!valid()"
+          [nzLoading]="http.loading">保存
+  </button>
+</div>

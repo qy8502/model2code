@@ -1,0 +1,190 @@
+<page-header [action]="phActionTpl" [title]="titleTpl">
+  <ng-template #titleTpl>
+    {{routeData.title}}
+    <small class="text-grey-7" *ngIf="routeData.subTitle">{{routeData.subTitle}}</small>
+    <ng-container *ngIf="editing || editingByOther">
+      <nz-badge class="ml-md" [nzCount]="editor">
+        <nz-avatar nzShape="square" style="margin-right: 4px" [nzSrc]="routeData.project.editorAvatar"
+                   [nzTooltipTitle]="routeData.project.editorName+' 正在编辑……'" nzTooltipPlacement="right" nz-tooltip
+        ></nz-avatar>
+      </nz-badge>
+      <ng-template #editor>
+        <nz-badge nzStatus="processing" class="ant-scroll-number-custom-component"></nz-badge>
+        <!--<i nz-icon nzType="edit" class="ant-scroll-number-custom-component" [nzSpin]="true" nzTheme="twotone"></i>-->
+      </ng-template>
+
+    </ng-container>
+  </ng-template>
+  <ng-template #phActionTpl>
+    <!--<nz-button-group>
+      <nz-upload [nzAccept]="'.m2c'" [nzBeforeUpload]="beforeUpload">
+        <button nz-button><i nz-icon nzType="upload"></i><span>导入</span></button>
+      </nz-upload>
+      <button (click)="exportFile()" nz-button>导出</button>
+    </nz-button-group>-->
+    <button nz-button nz-dropdown [nzDropdownMenu]="menu">模型项目<i nz-icon nzType="down"></i></button>
+    <nz-dropdown-menu #menu="nzDropdownMenu">
+      <ul nz-menu>
+        <li nz-menu-item>
+          <a (click)="editProject()"><i nz-icon nzType="edit"></i> 编辑项目信息</a>
+        </li>
+        <li nz-menu-item class="border-bottom-1">
+          <a (click)="cleanProject()"><i nz-icon nzType="file"></i> 清空模型项目</a>
+        </li>
+        <li nz-menu-item>
+          <nz-upload [nzAccept]="'.m2c'" [nzBeforeUpload]="beforeUpload">
+            <a><i nz-icon nzType="upload"></i> 导入模型项目文件</a>
+          </nz-upload>
+        </li>
+        <li nz-menu-item>
+          <a (click)="exportFile()"><i nz-icon nzType="download"></i> 导出模型项目文件</a>
+        </li>
+        <li nz-menu-item>
+          <a (click)="exportLocal()"><i nz-icon nzType="download"></i> 导出到本地模型</a>
+        </li>
+      </ul>
+    </nz-dropdown-menu>
+
+    <button (click)="generate()" nz-button class="ml-sm">生成代码</button>
+    <button (click)="checkOut()" nzType="primary" nz-button class="ml-sm" *ngIf="routeParam.projectId && !editing"
+            [disabled]="editingByOther">获取编辑
+    </button>
+    <button (click)="checkIn()" nzType="primary" nz-button class="ml-sm" *ngIf="routeParam.projectId && editing">提交保存
+    </button>
+    <button (click)="save()" nzType="primary" nz-button class="ml-sm" *ngIf="!routeParam.projectId">本地保存
+    </button>
+
+  </ng-template>
+</page-header>
+<nz-alert *ngIf="routeParam.projectId && !editing" style="margin: -24px -24px 24px -24px;" nzType="warning"
+          nzMessage="请尽量先“获取编辑”后再修改模型，否则您做的修改将会被覆盖。" nzShowIcon nzBanner></nz-alert>
+<nz-alert *ngIf="temp" style="margin: -24px -24px 24px -24px;" nzType="info"
+          [nzMessage]="routeParam.projectId? tempProjectAlert : tempAlert" nzShowIcon nzBanner nzCloseable
+          (nzOnClose)="temp = false"></nz-alert>
+<ng-template #tempProjectAlert>当前是自动存储的临时内容，您可以<a (click)="revert()">还原</a>到服务器保存的正式内容，在“还原”或“获取编辑”之前妥善处理您临时修改内容。
+</ng-template>
+<ng-template #tempAlert>当前是自动存储的临时内容，您可以<a (click)="revert()">还原</a>到本地保存的正式内容。</ng-template>
+<nz-alert *ngIf="project && modelErrorList.length>0" style="margin: -24px -24px 24px -24px;" nzType="error"
+          [nzMessage]="modelErrorAlert" nzShowIcon nzBanner></nz-alert>
+<ng-template #modelErrorAlert>模型 {{modelErrorList.join(',') }} 存在问题。<a
+  (click)="edit(project.modelMap[modelErrorList[0]])">请检查并修复。</a></ng-template>
+
+
+<nz-dropdown-menu #menu="nzDropdownMenu">
+  <ul nz-menu>
+    <li nz-menu-item (click)="add()">添加模型</li>
+    <li nz-menu-divider></li>
+    <li nz-menu-item (click)="add(true)">添加枚举</li>
+    <li nz-menu-divider></li>
+    <li nz-menu-item (click)="processTable()">根据SQL添加模型</li>
+    <li nz-menu-divider></li>
+    <li class="ant-dropdown-menu-item" style="outline:none !important;" contenteditable="true" #pasteZone
+        (keyup)="resetPasteZone(pasteZone)"
+        (cut)="resetPasteZone(pasteZone)"
+        (blur)="resetPasteZone(pasteZone)"
+        (mouseup)="resetPasteZone(pasteZone)"
+        (paste)="resetPasteZone(pasteZone);pasteModel($event.clipboardData.getData('text/plain'));">
+      粘贴模型(按Ctrl+V)
+    </li>
+  </ul>
+</nz-dropdown-menu>
+
+<div nz-row nzType="flex" [nzGutter]="16" class="model-container position-relative" dnd-sortable-container
+     [sortableData]="project.models" (contextmenu)="contextMenu($event, menu)">
+  <ng-container *ngIf="project">
+    <ng-container *ngFor="let model of project.models; let idx = index">
+      <div nz-col nzSpan="24" *ngIf="firstModelOfModule(model)">
+        <div class="module-start"
+             [ngStyle]="{'background-color':project.moduleMap[model.moduleName].module.color}"></div>
+        <nz-divider class="model" nzOrientation="left" [nzText]="text">
+          <ng-template #text><label>模块: </label>{{model.moduleName}}
+            <span class="text-sm text-grey-7 ml-sm">{{project.moduleMap[model.moduleName].module.comment}}</span>
+            <a class="ml-md" (click)="editModule(project.moduleMap[model.moduleName].module)"><i nz-icon nzType="edit"
+                                                                                                 nzTheme="outline"></i></a>
+          </ng-template>
+        </nz-divider>
+      </div>
+      <div nz-col class="width-lg" dnd-sortable [sortableIndex]="idx" (onDragSuccess)="modelChanged()">
+        <nz-card class="model" [ngClass]="{'enum':model.enum}" [attr.modelName]="model.name" [nzTitle]="modelTitleTpl"
+                 [nzExtra]="modelExtraTpl"
+                 style="border-top-width:3px;"
+                 [ngStyle]="{'border-top-color':model.color,'background-color':project.modelErrorMap[model.name]?'#fff0f0':null}">
+          <article>
+            <!--nz-typography nzEllipsis nzExpandable [nzEllipsisRows]="3"-->
+            <p *ngFor="let field of model.fields" class="flex-nowrap text-hover" nz-paragraph
+               [ngStyle]="{'color':project.modelErrorMap[model.name] && project.modelErrorMap[model.name][field.name]?'#ff0000':null}"
+               (mouseenter)="showTypeForeign(model,field,$event)" (mouseleave)="hideTypeForeign()">
+              <span nz-tooltip [nzTitle]="field.comment">{{field.name}}</span>
+              <nz-tag *ngIf="field.pk" class="ml-sm" [nzColor]="'blue'">pk</nz-tag>
+              <span class="float-right">
+              <code>
+                <nz-badge *ngIf="isForeign(field)"
+                          [nzColor]="getModelColor(model,field)"></nz-badge>
+                {{field.type}}</code>
+          </span>
+            </p>
+            <ng-container *ngIf="model.enum && model.enumItems">
+              <p *ngFor="let enumItem of model.enumItems" class="flex-nowrap text-hover" nz-paragraph>
+                <span nz-tooltip [nzTitle]="enumItem.label">{{enumItem.key}}</span>
+                <span class="float-right">
+                  <code>{{enumItem.value}}</code>
+                </span>
+              </p>
+            </ng-container>
+          </article>
+        </nz-card>
+        <ng-template #modelTitleTpl>
+          <h4>
+            {{model.name}}
+          </h4>
+          <span nz-text nzType="secondary"><small>{{model.comment}}</small></span>
+        </ng-template>
+        <ng-template #modelExtraTpl>
+          <a dnd-sortable-handle><i nz-icon nzType="drag" nzTheme="outline"></i></a>
+          <nz-divider nzType="vertical"></nz-divider>
+          <a (click)="copyModel(model)"><i nz-icon nzType="copy" nzTheme="outline"></i></a>
+          <nz-divider nzType="vertical"></nz-divider>
+          <a (click)="edit(model)"><i nz-icon nzType="edit" nzTheme="outline"></i></a>
+          <nz-divider nzType="vertical"></nz-divider>
+          <a nz-popconfirm
+             nzTitle="是否确定删除{{model.name}}模型?关联此模型的字段将会一同删除。"
+             (nzOnConfirm)="delete(model)"><i nz-icon nzType="delete" nzTheme="outline"></i></a>
+        </ng-template>
+      </div>
+      <div nz-col nzSpan="24" *ngIf="lastModelOfModule(model)" class="mb-md">&nbsp;
+        <div class="module-end"></div>
+      </div>
+    </ng-container>
+    <div nz-col class="width-lg">
+      <button class="model" style="height:120px;" nzType="dashed" nzBlock
+              nzSize="large" nz-button nz-dropdown (click)="add()" nzClickHide="false"
+              [nzDropdownMenu]="menu">
+        <i nz-icon nzType="plus" nzTheme="outline"></i>添加模型<!--<i nz-icon nzType="down"></i>-->
+      </button>
+      <nz-dropdown-menu #menu="nzDropdownMenu">
+        <ul nz-menu class="text-center">
+          <li nz-menu-item (click)="processTable()">
+            根据SQL添加模型
+          </li>
+          <li nz-menu-divider></li>
+          <li nz-menu-item (click)="add(true)">
+            添加枚举
+          </li>
+          <li nz-menu-divider></li>
+          <li nz-menu-item class="ant-dropdown-menu-item" style="outline:none !important;" contenteditable="true"
+              #pasteZone
+              (keyup)="resetPasteZone(pasteZone)"
+              (cut)="resetPasteZone(pasteZone)"
+              (blur)="resetPasteZone(pasteZone)"
+              (mouseup)="resetPasteZone(pasteZone)"
+              (paste)="resetPasteZone(pasteZone);pasteModel($event.clipboardData.getData('text/plain'));">
+            粘贴模型(按Ctrl+V)
+          </li>
+        </ul>
+      </nz-dropdown-menu>
+    </div>
+  </ng-container>
+  <canvas #modelsCanvas style="position: absolute;z-index: 1;pointer-events:none;">
+
+  </canvas>
+</div>

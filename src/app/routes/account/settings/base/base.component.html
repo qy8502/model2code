@@ -1,0 +1,27 @@
+<nz-spin [nzSpinning]="userLoading">
+  <div class="main" *ngIf="user">
+    <div class="left">
+      <form nz-form nzLayout="vertical" #f="ngForm" (submit)="save()" se-container="1">
+        <se label="姓名" error="请输入您的姓名!">
+          <input nz-input [(ngModel)]="user.name" name="name" required/>
+        </se>
+        <se label="头像URL" error="请输入您的头像URL!">
+          <input nz-input [(ngModel)]="user.avatarUrl" name="avatarUrl"/>
+        </se>
+        <se>
+          <button nz-button nzType="primary" [disabled]="f.invalid">更新基本信息</button>
+        </se>
+      </form>
+    </div>
+    <div class="right">
+      <div class="avatar_title">头像预览</div>
+      <div class="avatar"><img src="{{ settings.user.avatar }}" alt="Avatar"/></div>
+      <!--<nz-upload nzAction="/user/avatar" [nzShowUploadList]="false">
+        <button nz-button class="button_view">
+          <i nz-icon nzType="upload"></i>
+          <span>更换头像</span>
+        </button>
+      </nz-upload>-->
+    </div>
+  </div>
+</nz-spin>

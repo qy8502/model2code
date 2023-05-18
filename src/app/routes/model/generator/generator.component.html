@@ -1,0 +1,69 @@
+<page-header [action]="phActionTpl" [title]="titleTpl">
+  <ng-template #titleTpl>
+    {{routeData.title}}
+    <small class="text-grey-7" *ngIf="routeData.subTitle">{{routeData.subTitle}}</small>
+  </ng-template>
+  <ng-template #phActionTpl>
+    <button (click)="download()" nzType="primary" nz-button>下载全部代码</button>
+    <button (click)="back()" nz-button class="ml-sm">返回</button>
+  </ng-template>
+</page-header>
+<nz-result *ngIf="modelError" nzTitle="生成代码发生错误！" nzStatus="error" [nzSubTitle]="modelErrorAlert"
+           style="text-align: center;"></nz-result>
+<ng-template #modelErrorAlert>{{modelError.message}} 请<a routerLink="/model/list">检查并修正模型</a>后，再重新生成代码！</ng-template>
+<div *ngIf="!modelError" nz-row [nzGutter]="24">
+  <div nz-col [nzLg]="6">
+    <nz-card>
+      <nz-input-group class="width-100" [nzSuffix]="suffixIcon">
+        <input type="text" nz-input placeholder="Search" [(ngModel)]="searchValue"/>
+      </nz-input-group>
+      <ng-template #suffixIcon>
+        <i nz-icon nzType="search"></i>
+      </ng-template>
+      <div style="overflow-x: auto" class="mt-md">
+        <nz-tree
+          [nzData]="nodes"
+          [nzSearchValue]="searchValue"
+          (nzClick)="selectCode($event)"
+          [nzTreeTemplate]="nzTreeTemplate"
+        >
+        </nz-tree>
+        <ng-template #nzTreeTemplate let-node>
+      <span class="custom-node" [class.text-primary]="selectedCodes[tabIndex]?.path === node.key">
+        <span *ngIf="!node.isLeaf">
+          <i nz-icon [nzType]="node.isExpanded ? 'folder-open' : 'folder'" class="mr-xs"></i>
+          <span class="folder-name" [innerHtml]="node.title | nzHighlight: searchValue: '' : 'font-highlight'"></span>
+        </span>
+        <span *ngIf="node.isLeaf">
+          <i nz-icon nzType="file" class="mr-xs"></i>
+          <span class="file-name" [innerHtml]="node.title | nzHighlight: searchValue: '' : 'font-highlight'"></span>
+        </span>
+      </span>
+        </ng-template>
+      </div>
+    </nz-card>
+  </div>
+  <div nz-col [nzLg]="18">
+    <nz-tabset [nzAnimated]="false" *ngIf="selectedCodes && selectedCodes.length" [nzType]="'card'"
+               [(nzSelectedIndex)]="tabIndex">
+      <nz-tab *ngFor="let code of selectedCodes" [nzTitle]="titleTemplate">
+        <ng-template #titleTemplate>
+          <div>{{ code.fileNameFull }}<i nz-icon nzType="close" class="ant-tabs-close-x" (click)="closeTab(code)"></i>
+          </div>
+        </ng-template>
+
+        <nz-card class="border-top-0">
+          <nz-list>
+            <nz-list-item [nzActions]="[opAction]" [nzContent]="path" nzNoFlex class="pt0">
+              <ng-template #path><span class="ml-sm text-grey">{{code.path}}</span></ng-template>
+              <ng-template #opAction>
+                <a (click)="copy(code.code)"><i nz-icon nzType="copy" nzTheme="outline"></i> 复制</a>
+              </ng-template>
+            </nz-list-item>
+          </nz-list>
+          <pre><code [highlight]="code.code"></code></pre>
+        </nz-card>
+      </nz-tab>
+    </nz-tabset>
+  </div>
+</div>

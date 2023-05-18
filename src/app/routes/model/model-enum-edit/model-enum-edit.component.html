@@ -1,0 +1,81 @@
+<div class="modal-header">
+  <div class="modal-title"> {{ adding ? '添加枚举' : '编辑枚举' }}</div>
+</div>
+<nz-spin *ngIf="!i" class="modal-spin"></nz-spin>
+
+<form nz-form [formGroup]="modelForm" se-container [firstVisual]="true" [labelWidth]="100" [col]="4">
+  <se required="true" label="名称"
+      [error]="{required:'必须输入枚举模型名称!',pattern:'枚举模型名称必须是大驼峰命名，以英文开头的英文和数字组合！',repeated:'模型名称不能和其他模型重名！'}">
+    <input [(ngModel)]="i.name" formControlName="name" nz-input placeholder="名称">
+  </se>
+  <se required="true" label="描述" error="请输入枚举模型描述!">
+    <input [(ngModel)]="i.comment" formControlName="comment" nz-input placeholder="描述">
+  </se>
+  <se required="true" label="枚举类型" error="请选择枚举类型!">
+    <nz-select nzPlaceHolder="请选择枚举类型"
+               [(ngModel)]="i.enumType" formControlName="enumType"
+               (ngModelChange)="enumTypeChange($event)">
+      <nz-option nzLabel="整数枚举" nzValue="number">
+      </nz-option>
+      <nz-option nzLabel="文本枚举" nzValue="string">
+      </nz-option>
+    </nz-select>
+  </se>
+  <se label="模块" [error]="{pattern:'模块名必须是大驼峰命名，以英文开头的英文和数字组合！',noModel:'枚举必须选择一个存在模型的模块'}">
+    <input [(ngModel)]="i.module" formControlName="module" [nzAutocomplete]="moduleName" nz-input
+           placeholder="模块名称，默认与模型名称一致!">
+    <nz-autocomplete #moduleName>
+      <nz-auto-option *ngFor="let data of moduleNameList"
+                      [nzValue]="data.value">
+        <p><span>{{data.value}}</span></p>
+        <p class="text-wrap">
+          <small class="text-grey">{{data.label}}</small>
+        </p>
+      </nz-auto-option>
+    </nz-autocomplete>
+  </se>
+</form>
+
+<nz-divider nzText="模型字段"></nz-divider>
+<div *ngIf="enumItemFormList && enumItemFormList.length" dnd-sortable-container [sortableData]="enumItemFormList">
+  <div *ngFor="let item of enumItemFormList; let idx = index" dnd-sortable [sortableIndex]="idx"
+       class="field" [ngClass]="{active:item.active}"
+       (mouseenter)="item.active=true;" (mouseleave)="item.active=false">
+    <form *ngIf="item.form" nz-form [formGroup]="item.form" se-container [firstVisual]="true" [labelWidth]="100"
+          [col]="4">
+      <se required="true" label="常量名称"
+          [error]="{required:'必须输入常量名称!',pattern:'常量名称必须是大写下划线命名，以英文开头的英文和数字组合！',repeated:'常量名称不能和其他枚举条目重名！'}">
+        <input [(ngModel)]="item.enumItem.key" formControlName="key" nz-input placeholder="常量名称（如：SYSTEM_ERROR）">
+      </se>
+      <se *ngIf="i.enumType==='string'" required="true" label="文本枚举值" error="请输入文本枚举值!">
+        <input [(ngModel)]="item.enumItem.value" formControlName="value"
+               nz-input placeholder="枚举值（如：SYSTEM_ERROR）">
+      </se>
+      <se *ngIf="i.enumType==='number'" required="true" label="数字枚举值" error="请输入数字枚举值!">
+        <nz-input-number [(ngModel)]="item.enumItem.value" formControlName="value" class="width-sm"
+                         nzPlaceHolder="数字枚举值（如：1）"></nz-input-number>
+      </se>
+      <se required="true" label="描述" error="必须输入字段描述!">
+        <input [(ngModel)]="item.enumItem.label" formControlName="label" nz-input placeholder="描述">
+      </se>
+    </form>
+    <!--<nz-divider nzDashed nzOrientation="right" [nzText]="item.active? enumItemAction :null"></nz-divider>-->
+    <nz-divider nzDashed [nzText]="enumItemAction "></nz-divider>
+    <ng-template #enumItemAction>
+      <a dnd-sortable-handle class="text-sm"><i nz-icon nzType="drag" nzTheme="outline"></i> 排序</a>
+      <nz-divider nzType="vertical"></nz-divider>
+      <a (click)="deleteEnumItem(item)" class="text-sm"><i nz-icon nzType="delete" nzTheme="outline"></i> 删除</a>
+    </ng-template>
+  </div>
+</div>
+
+
+<button style="height:48px;" (click)="addEnumItem()" nz-button [nzBlock]="true" nzType="dashed" nzSize="large">
+  <i nz-icon nzType="plus" nzTheme="outline"></i>添加字段
+</button>
+<div class="modal-footer">
+  <button nz-button type="button" (click)="close()">关闭</button>
+  <button nz-button type="submit" nzType="primary" (click)="save()" [disabled]="!valid()"
+          [nzLoading]="http.loading">保存
+  </button>
+</div>

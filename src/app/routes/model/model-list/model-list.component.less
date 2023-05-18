@@ -1,0 +1,58 @@
+//--ignore-all-space
+
+:host {
+  ::ng-deep {
+
+    [dnd-sortable-container], [dnd-sortable] {
+      cursor: auto !important;
+    }
+
+    .model-container {
+      .module-start {
+        position: absolute;
+        left: -4px;
+        z-index: -1;
+        width: 100%;
+        height: 100%;
+      }
+
+      .module-end {
+        position: absolute;
+        left: -4px;
+        z-index: -1;
+        width: 100%;
+        height: 100%;
+        background-color: #f5f7fa;
+      }
+
+      [nz-col].ant-col {
+        position: initial;
+      }
+
+      .model {
+        &.other {
+          opacity: 0.2;
+        }
+
+        &.enum {
+          background-color: #FFFFE6;
+        }
+
+        position: initial;
+
+        p {
+          margin: 0;
+          padding: 4px;
+        }
+
+        .ant-card-head {
+          padding: 0 16px;
+        }
+
+        .ant-card-body {
+          padding: 12px;
+        }
+      }
+    }
+  }
+}

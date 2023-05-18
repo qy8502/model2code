@@ -1,0 +1,13 @@
+<page-header [action]="phActionTpl" [title]="titleTpl">
+  <ng-template #phActionTpl>
+    <button (click)="add()" *aclIf="aclAdd" nz-button nzType="primary">新建</button>
+  </ng-template>
+  <ng-template #titleTpl>
+    {{routeData.title}}<small class="text-grey-7" *ngIf="routeData.subTitle">{{routeData.subTitle}}</small>
+  </ng-template>
+</page-header>
+<nz-card>
+  <!--<sf *ngIf="searchSchema" mode="search" [schema]="searchSchema" (formSubmit)="search($event)" (formReset)="search($event)"></sf>-->
+  <st #st [loading]="loading" [data]="data" [columns]="columns"
+      [pi]="param.pageIndex" [ps]="param.pageSize" [total]="total" (change)="change($event)"></st>
+</nz-card>
