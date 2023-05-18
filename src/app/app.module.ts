@@ -24,7 +24,7 @@ import {HighlightModule} from "ngx-highlightjs";
 import sql from 'highlight.js/lib/languages/sql';
 import java from 'highlight.js/lib/languages/java';
 import typescript from 'highlight.js/lib/languages/typescript';
-import {DndModule} from "ng2-dnd";
+import {DndModule} from "@beyerleinf/ngx-dnd";
 // #region Startup Service
 import {StartupService} from '@core/startup/startup.service';
 import {DelonModule} from './delon.module';

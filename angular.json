@@ -35,7 +35,7 @@
             "styles": [
               "src/styles.less",
               "node_modules/highlight.js/styles/github.css",
-              "node_modules/ng2-dnd/bundles/style.css"
+              "node_modules/@beyerleinf/ngx-dnd/styles.css"
             ],
             "scripts": [
               "node_modules/ajv/dist/ajv.bundle.js",

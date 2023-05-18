@@ -4,7 +4,7 @@ import {ModelRoutingModule} from './model-routing.module';
 import {ModelListComponent} from './model-list/model-list.component';
 import {ModelEditComponent} from './model-edit/model-edit.component';
 import {ModelProcessTableComponent} from './process-table/process-table.component';
-import {DndModule} from "ng2-dnd";
+import {DndModule} from "@beyerleinf/ngx-dnd";
 import {ModelService} from "./model.service";
 import {ModelGeneratorComponent} from './generator/generator.component';
 import {HighlightModule} from "ngx-highlightjs";
