@@ -94,12 +94,6 @@ src/app/routes/model/generator
 model2code 是基于angular和ng-alain，主要功能由前端开发。可以只部署前端项目，但是无法使用多项目多人协同。部署服务器端可以实现完整功能。
 
 
-## 链接
-
-+ [model2code项目代码](https://git.qltechdev.com/quyankai/model2code)
-+ [model2code-server项目代码](https://git.qltechdev.com/quyankai/model2code-server/)
-+ [公司model2code](https://m2c.qltechdev.com/)
-
 ## 支撑
 
 + `ng-zorro-antd` based
